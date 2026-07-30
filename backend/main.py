@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI
 
 from app.core.database import Base, engine
+from app.routers.backups import router as backups_router
 from app.routers.devices import router as devices_router
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ def on_startup() -> None:
 
 
 app.include_router(devices_router)
+app.include_router(backups_router)
 
 
 @app.get("/")
