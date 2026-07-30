@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.device import Device
-from app.schemas.device import DeviceCreate, DeviceRead, DeviceUpdate
+from app.schemas.device import DeviceRead
+from app.schemas.device_internal import DeviceCreate, DeviceUpdate
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/devices", tags=["devices"])

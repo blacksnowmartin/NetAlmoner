@@ -10,6 +10,8 @@ from app.core.database import get_db
 from app.models.backup import Backup
 from app.models.device import Device
 from app.schemas.backup import BackupCreate, BackupRead
+from app.schemas.diff import BackupDiffRead
+from app.services.diff_engine import generate_diff
 from app.services.netmiko_ssh import fetch_running_config
 
 logger = logging.getLogger(__name__)
@@ -25,14 +27,50 @@ def _get_backup_by_id(backup_id: int, db: Session) -> Optional[Backup]:
 
 
 @router.get("/", response_model=List[BackupRead])
-def list_backups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> List[Backup]:
+def list_backups(
+    device_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> List[Backup]:
     try:
-        return db.query(Backup).offset(skip).limit(limit).all()
+        query = db.query(Backup)
+        if device_id is not None:
+            query = query.filter(Backup.device_id == device_id)
+        return query.offset(skip).limit(limit).all()
     except Exception as error:
         logger.exception("Unable to list backups.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve backups.",
+        )
+
+
+@router.get("/diff", response_model=BackupDiffRead)
+def diff_backups(base_id: int, compare_id: int, db: Session = Depends(get_db)) -> BackupDiffRead:
+    try:
+        base_backup = _get_backup_by_id(backup_id=base_id, db=db)
+        compare_backup = _get_backup_by_id(backup_id=compare_id, db=db)
+
+        if not base_backup or not compare_backup:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or both backups were not found.",
+            )
+
+        diff_lines = generate_diff(base_backup.config_text, compare_backup.config_text)
+        return BackupDiffRead(
+            base_backup_id=base_id,
+            compare_backup_id=compare_id,
+            diff_lines=diff_lines,
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.exception("Failed to generate backup diff.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to generate diff.",
         )
 
 

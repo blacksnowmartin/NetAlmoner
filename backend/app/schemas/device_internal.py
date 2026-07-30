@@ -27,15 +27,3 @@ class DeviceUpdate(BaseModel):
     password: Optional[constr(strip_whitespace=True, min_length=1, max_length=256)] = None
     secret: Optional[constr(strip_whitespace=True, max_length=256)] = None
     port: Optional[int] = Field(default=None, ge=1, le=65535)
-
-
-class DeviceRead(BaseModel):
-    id: int
-    hostname: str
-    ip_address: str
-    vendor: str
-    username: str
-    port: int
-
-    class Config:
-        orm_mode = True
