@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { GitPullRequest, ServerCog, ShieldCheck, PlusCircle, RefreshCw } from 'lucide-react';
+import { GitPullRequest, ServerCog, ShieldCheck, PlusCircle, RefreshCw, Eye, X, ArrowLeftRight } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000';
 
@@ -24,10 +24,20 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [detailDeviceId, setDetailDeviceId] = useState(null);
+  const [selectedBaseBackupId, setSelectedBaseBackupId] = useState(null);
+  const [selectedCompareBackupId, setSelectedCompareBackupId] = useState(null);
+  const [diffLines, setDiffLines] = useState([]);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   const selectedDevice = useMemo(
     () => devices.find((device) => device.id === selectedDeviceId) ?? null,
     [devices, selectedDeviceId],
+  );
+
+  const detailDevice = useMemo(
+    () => devices.find((device) => device.id === detailDeviceId) ?? null,
+    [devices, detailDeviceId],
   );
 
   async function loadDashboard() {
@@ -62,6 +72,20 @@ function App() {
       setBackups(response.data);
     } catch (err) {
       setError('Unable to load backup history.');
+    }
+  }
+
+  async function loadDiff(baseId, compareId) {
+    setDiffLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE}/backups/diff`, {
+        params: { base_id: baseId, compare_id: compareId },
+      });
+      setDiffLines(response.data.diff_lines ?? []);
+    } catch (err) {
+      setError('Unable to load backup diff.');
+    } finally {
+      setDiffLoading(false);
     }
   }
 
@@ -166,6 +190,35 @@ function App() {
     }
   }
 
+  function openDetailModal(device) {
+    setDetailDeviceId(device.id);
+    setSelectedDeviceId(device.id);
+    setSelectedBaseBackupId(null);
+    setSelectedCompareBackupId(null);
+    setDiffLines([]);
+  }
+
+  function closeDetailModal() {
+    setDetailDeviceId(null);
+    setSelectedBaseBackupId(null);
+    setSelectedCompareBackupId(null);
+    setDiffLines([]);
+  }
+
+  async function handleShowDiff() {
+    if (!selectedBaseBackupId || !selectedCompareBackupId) {
+      setError('Select one backup as the base and one as the comparison target.');
+      return;
+    }
+
+    if (selectedBaseBackupId === selectedCompareBackupId) {
+      setError('Choose two different backups to compare.');
+      return;
+    }
+
+    await loadDiff(selectedBaseBackupId, selectedCompareBackupId);
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -267,7 +320,9 @@ function App() {
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button onClick={() => setSelectedDeviceId(device.id)} className="rounded-xl bg-slate-800 px-3 py-2 text-sm text-slate-200">Inspect</button>
+                        <button onClick={() => openDetailModal(device)} className="rounded-xl bg-slate-800 px-3 py-2 text-sm text-slate-200">
+                          <Eye className="mr-2 inline h-4 w-4" />Details
+                        </button>
                         <button onClick={() => handleBackup(device.id)} className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white">Run backup</button>
                       </div>
                     </div>
@@ -328,6 +383,98 @@ function App() {
           </>
         )}
       </div>
+
+      {detailDevice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-8 backdrop-blur-sm">
+          <div className="w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Device detail</p>
+                <h3 className="text-2xl font-semibold text-white">{detailDevice.hostname}</h3>
+              </div>
+              <button onClick={closeDetailModal} className="rounded-full border border-slate-700 p-2 text-slate-300">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid gap-6 p-6 lg:grid-cols-[0.8fr_1.2fr]">
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+                <h4 className="mb-4 text-lg font-semibold text-white">Connection profile</h4>
+                <div className="space-y-3 text-sm text-slate-300">
+                  <div className="flex justify-between gap-4 rounded-2xl bg-slate-900/70 px-3 py-2">
+                    <span className="text-slate-500">IP address</span>
+                    <span className="font-medium text-white">{detailDevice.ip_address}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 rounded-2xl bg-slate-900/70 px-3 py-2">
+                    <span className="text-slate-500">Vendor</span>
+                    <span className="font-medium text-white">{detailDevice.vendor}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 rounded-2xl bg-slate-900/70 px-3 py-2">
+                    <span className="text-slate-500">Username</span>
+                    <span className="font-medium text-white">{detailDevice.username}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 rounded-2xl bg-slate-900/70 px-3 py-2">
+                    <span className="text-slate-500">Port</span>
+                    <span className="font-medium text-white">{detailDevice.port}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white">Backup comparison</h4>
+                    <p className="text-sm text-slate-400">Choose two snapshots and inspect the diff.</p>
+                  </div>
+                  <button onClick={handleShowDiff} className="rounded-2xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white">
+                    <ArrowLeftRight className="mr-2 inline h-4 w-4" />Show diff
+                  </button>
+                </div>
+
+                {backups.length ? (
+                  <div className="space-y-3">
+                    {backups.map((backup) => (
+                      <div key={backup.id} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-white">{backup.success ? 'Successful backup' : 'Failed backup'}</p>
+                            <p className="text-sm text-slate-500">{backup.created_at}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setSelectedBaseBackupId(backup.id)} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300">Use as base</button>
+                            <button onClick={() => setSelectedCompareBackupId(backup.id)} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300">Use as compare</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No backup history available for this device yet.</p>
+                )}
+
+                <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-400">
+                  <p>Base backup: {selectedBaseBackupId ?? 'none'}</p>
+                  <p>Compare backup: {selectedCompareBackupId ?? 'none'}</p>
+                </div>
+
+                {diffLoading ? (
+                  <div className="mt-4 text-sm text-slate-400">Loading diff…</div>
+                ) : diffLines.length ? (
+                  <div className="mt-4 max-h-72 overflow-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-3 font-mono text-sm text-slate-300">
+                    {diffLines.map((line, index) => (
+                      <div key={`${line}-${index}`} className={line.startsWith('+') ? 'text-emerald-300' : line.startsWith('-') ? 'text-rose-300' : 'text-slate-400'}>
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 text-sm text-slate-500">Select two backups to view a configuration diff.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
