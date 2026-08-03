@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import Base, engine
 from app.routers.backups import router as backups_router
@@ -11,6 +12,14 @@ from app.routers.metrics import router as metrics_router
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="Net Almoner API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
