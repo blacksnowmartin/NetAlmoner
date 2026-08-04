@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from netmiko import ConnectHandler
-from netmiko.ssh_exception import NetmikoTimeoutException, NetmikoAuthenticationException
+from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
 
 logger = logging.getLogger(__name__)
 
