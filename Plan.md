@@ -44,3 +44,5 @@ Ensure code includes robust try/except blocks and clear variable names. Stop aft
 env -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy npm run dev -- --host 0.0.0.0 --port 5173
 
 .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+(while building this product got a new idea
+ to create a web app with a good ui to be able share files between pc and mobile which are using the same network)
