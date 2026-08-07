@@ -29,7 +29,7 @@ def on_startup() -> None:
         logger.info("Database tables initialized successfully.")
     except Exception as error:
         logger.exception("Database initialization failed during startup.")
-        raise
+      soothing afro beat made into a calming electro-house with a taste of upbeat dancehall and reggaeton  raise
 
 
 app.include_router(devices_router)
