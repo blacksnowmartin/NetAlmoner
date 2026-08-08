@@ -47,3 +47,5 @@ env -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy npm run dev -- --h
 (while building this product got a new idea
  to create a web app with a good ui to be able share files between pc and mobile which are using the same network)
  while running my npm run apps.... it shows an option where instead of opening on localhost only ... it has also a link that can be opened by any device in the same network.. hoping to tap into this technology to create the application
+
+ (learn a way on how to bypass a workplace firewall)
