@@ -41,7 +41,8 @@ Provide:
 
 Ensure code includes robust try/except blocks and clear variable names. Stop after completing these initial backend files and ask me for the next step.
 
-env -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy npm run dev -- --host 0.0.0.0 --port 5173
+env -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy 
+npm run dev -- --host 0.0.0.0 --port 5173
 
 .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 (while building this product got a new idea
