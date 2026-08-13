@@ -56,3 +56,4 @@ npm run dev -- --host 0.0.0.0 --port 5173
  )
  git commit --allow-empty -m "Special exams postponed" --date="Mon August 10 01:14:00 2026"
 
+thinking of changing the name of the repo
